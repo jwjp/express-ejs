@@ -40,7 +40,10 @@ const getPool = () => {
       password: process.env.DB_PASSWORD,
       connectionLimit: 10,
       waitForConnections: true,
-      enableKeepAlive: true
+      enableKeepAlive: true,
+      charset: 'utf8mb4',
+      timezone: '+09:00',
+      dateStrings: true
     });
   }
   return pool;
