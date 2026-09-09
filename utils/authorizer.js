@@ -2,6 +2,28 @@
 
 import { logger } from '#utils/logger';
 
+const normalizePermissions = (permissions) => {
+  if (!permissions) {
+    return [];
+  }
+
+  if (Array.isArray(permissions)) {
+    return permissions;
+  }
+
+  if (typeof permissions !== 'string') {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(permissions);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    logger.warn('Invalid permissions JSON found on user object');
+    return [];
+  }
+};
+
 /**
  * Check if user has required role
  * @param {string|string[]} roles - Required role(s)
@@ -83,11 +105,7 @@ const permission = (permissions) => {
     const requiredPermissions = Array.isArray(permissions) ? permissions : [permissions];
 
     // Parse user permissions from JSON if they exist
-    const userPermissions = req.user.permissions ?
-      (typeof req.user.permissions === 'string' ?
-        JSON.parse(req.user.permissions) :
-        req.user.permissions) :
-      [];
+    const userPermissions = normalizePermissions(req.user.permissions);
 
     // Check if user has any of the required permissions
     if (requiredPermissions.some(permission => userPermissions.includes(permission))) {
@@ -110,4 +128,4 @@ const permission = (permissions) => {
   };
 };
 
-export { role, permission }
+export { normalizePermissions, role, permission }

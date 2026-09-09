@@ -2,7 +2,7 @@
 
 import express from 'express';
 import User from '#models/user';
-import { role, permission } from '#utils/authorizer';
+import { normalizePermissions, role, permission } from '#utils/authorizer';
 import { logger } from '#utils/logger';
 
 const router = express.Router();
@@ -12,8 +12,8 @@ const router = express.Router();
  */
 router.get('/', role('admin'), permission('read:users'), async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
     const offset = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
@@ -39,12 +39,22 @@ router.get('/', role('admin'), permission('read:users'), async (req, res, next) 
 /**
  * GET /users/:id - Get user by ID
  */
-router.get('/:id', permission('read:users'), async (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const userId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(userId) || userId < 1) {
+      return res.error('Invalid user ID', 400);
+    }
 
-    // Only allow users to view their own profile unless they have permission
-    if (req.user?.role !== 'admin' && req.user?.id !== userId) {
+    if (!req.user) {
+      return res.error('Unauthorized', 401);
+    }
+
+    const permissions = normalizePermissions(req.user.permissions);
+    const canReadUsers = req.user.role === 'admin' || permissions.includes('read:users');
+
+    // Only allow users to view their own profile unless they have elevated access.
+    if (!canReadUsers && req.user.id !== userId) {
       return res.error('Forbidden: You do not have permission to view this user', 403);
     }
 

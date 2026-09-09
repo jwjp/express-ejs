@@ -128,8 +128,18 @@ NCP_BUCKET=your_bucket_name
 
 # Session Configuration
 SESSION_SECRET=your_session_secret
+TRUST_PROXY=false
+
+# CORS Configuration
+CORS_ORIGINS=*
+CORS_CREDENTIALS=false
+
+# Access Control
+PUBLIC_PATHS=/,/examples,/login,/auth/login,/auth/logout,/auth/register,/stylesheets/,/fonts/,/images/,/javascripts/
+ALLOWED_IPS=*
 
 # Database Configuration
+# DB_PASSWORD may be empty for local development, but production should use a dedicated password.
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
@@ -185,8 +195,8 @@ Order of middleware (simplified):
 5. passport initialization + session
 6. gatekeeper (protect routes in production)
 7. accessLogger (morgan → winston)
-8. throttler (slowDown + rateLimit)
-9. responseHandler (res.success / res.error)
+8. responseHandler (res.success / res.error)
+9. throttler (slowDown + rateLimit)
 10. static files (public/)
 11. dynamic router loading (routes/**/*)
 12. 404 and centralized error handler
@@ -214,14 +224,14 @@ The main runtime dependencies (from package.json):
   "ejs": "3.1.10",
   "express": "5.1.0",
   "express-rate-limit": "^7.5.0",
-  "express-session": "^1.18.1",
+  "express-session": "^1.19.0",
   "express-slow-down": "^2.1.0",
-  "express-validator": "^7.2.1",
+  "express-validator": "^7.3.2",
   "helmet": "^8.1.0",
   "http-errors": "~1.6.3",
-  "morgan": "~1.9.1",
-  "multer": "2.0.2",
-  "mysql2": "^3.14.1",
+  "morgan": "^1.12.0",
+  "multer": "^2.3.0",
+  "mysql2": "^3.24.4",
   "passport": "^0.7.0",
   "passport-local": "^1.0.0",
   "session-file-store": "^1.5.0",

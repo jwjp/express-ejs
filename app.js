@@ -14,22 +14,39 @@ import routerLoader from '#middleware/routerLoader';
 import responseHandler from '#middleware/responseHandler';
 import compression from 'compression';
 import throttler from '#utils/throttler';
+import { getSessionSecret, parseList, toBoolean, validateCoreEnv } from '#utils/env';
 import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
 const FileStore = sessionFileStore(session);
+const isProduction = process.env.NODE_ENV === 'production';
+
+validateCoreEnv();
 
 // 0. view engine setup
 app.set('views', path.join(import.meta.dirname, 'views'));
 app.set('view engine', 'ejs');
+
+if (toBoolean(process.env.TRUST_PROXY, isProduction)) {
+  app.set('trust proxy', 1);
+}
 
 // 1. Compression
 app.use(compression());
 
 // 2. Security
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowedOrigins = parseList(process.env.CORS_ORIGINS, ['*']);
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(createError(403, 'Origin is not allowed by CORS'));
+  },
+  credentials: toBoolean(process.env.CORS_CREDENTIALS, false)
+}));
 
 // 3. Parsing
 app.use(express.json());
@@ -42,11 +59,13 @@ app.use(session({
     retries: 0,
     ttl: 12 * 60 * 60, // 12 hours
   }),
-  secret: process.env.SESSION_SECRET,
+  secret: getSessionSecret(),
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: {
-    secure: false,
+    secure: isProduction,
+    httpOnly: true,
+    sameSite: 'lax',
     maxAge: 60 * 60 * 1000 * 12, // 12 hours
   }
 }));
@@ -58,11 +77,11 @@ app.use(gatekeeper);
 // 6. Logger
 app.use(accessLogger);
 
-// 7. Throttler
-app.use(throttler());
-
-// 8. Response Handler
+// 7. Response Handler
 app.use(responseHandler());
+
+// 8. Throttler
+app.use(throttler());
 
 // 9. Static
 app.use(express.static(path.join(import.meta.dirname, 'public'), { extensions: ['html'] }));

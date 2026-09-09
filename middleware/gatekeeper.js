@@ -1,6 +1,7 @@
 // middleware/gatekeeper.js
 
 import { logger } from '#utils/logger';
+import { parseList } from '#utils/env';
 
 /**
  * A middleware function that serves as a security gatekeeper to control access to routes.
@@ -11,7 +12,8 @@ const gatekeeper = (req, res, next) => {
   }
 
   // public path
-  const publicPaths = [
+  const publicPaths = parseList(process.env.PUBLIC_PATHS, [
+    '/',
     '/examples',
     '/login',
     '/auth/login',
@@ -21,7 +23,7 @@ const gatekeeper = (req, res, next) => {
     '/fonts/',
     '/images/',
     '/javascripts/'
-  ];
+  ]);
 
   // url
   const urlWithoutQuery = req.path.split('?')[0];
@@ -39,16 +41,17 @@ const gatekeeper = (req, res, next) => {
     req.socket.remoteAddress;
 
   // allowed ip
-  const allowedIps = ['*'];
+  const allowedIps = parseList(process.env.ALLOWED_IPS, ['*']);
 
   // pass
-  if (publicPaths.some(path =>
-      urlWithoutQuery === '' ||   // /index
-      urlWithoutQuery === '/' ||  // /index/
-      urlWithoutQuery.startsWith(path)
-    ) &&
-    allowedIps.includes('*') ||
-    allowedIps.includes(ip)) {
+  const isPublicPath = publicPaths.some(publicPath =>
+    urlWithoutQuery === '' ||
+    urlWithoutQuery === publicPath ||
+    (publicPath !== '/' && urlWithoutQuery.startsWith(publicPath))
+  );
+  const isAllowedIp = allowedIps.includes('*') || allowedIps.includes(ip);
+
+  if (isPublicPath && isAllowedIp) {
     return next();
   }
 

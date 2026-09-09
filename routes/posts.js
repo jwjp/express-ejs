@@ -27,8 +27,8 @@ const postValidation = [
  */
 router.get('/', async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
     const offset = (page - 1) * limit;
 
     const [posts, total] = await Promise.all([
@@ -52,32 +52,17 @@ router.get('/', async (req, res, next) => {
 });
 
 /**
- * GET /posts/:id - Get post by ID
- */
-router.get('/:id', async (req, res, next) => {
-  try {
-    const postId = parseInt(req.params.id, 10);
-    const post = await Post.findPostById(postId);
-
-    if (!post) {
-      return res.error('Post not found', 404);
-    }
-
-    res.success('Post retrieved successfully', post);
-  } catch (error) {
-    logger.error('Error retrieving post:', error);
-    next(error);
-  }
-});
-
-/**
  * GET /posts/user/:userId - Get posts by user ID
  */
 router.get('/user/:userId', async (req, res, next) => {
   try {
     const userId = parseInt(req.params.userId, 10);
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
+    if (!Number.isInteger(userId) || userId < 1) {
+      return res.error('Invalid user ID', 400);
+    }
+
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
     const offset = (page - 1) * limit;
 
     const [posts, total] = await Promise.all([
@@ -96,6 +81,29 @@ router.get('/user/:userId', async (req, res, next) => {
     });
   } catch (error) {
     logger.error('Error retrieving user posts:', error);
+    next(error);
+  }
+});
+
+/**
+ * GET /posts/:id - Get post by ID
+ */
+router.get('/:id', async (req, res, next) => {
+  try {
+    const postId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(postId) || postId < 1) {
+      return res.error('Invalid post ID', 400);
+    }
+
+    const post = await Post.findPostById(postId);
+
+    if (!post) {
+      return res.error('Post not found', 404);
+    }
+
+    res.success('Post retrieved successfully', post);
+  } catch (error) {
+    logger.error('Error retrieving post:', error);
     next(error);
   }
 });
@@ -134,6 +142,10 @@ router.post('/', permission('create:posts'), validate(postValidation), async (re
 router.put('/:id', permission('update:posts'), validate(postValidation), async (req, res, next) => {
   try {
     const postId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(postId) || postId < 1) {
+      return res.error('Invalid post ID', 400);
+    }
+
     const { title, content } = req.body;
 
     // Check if post exists
@@ -163,6 +175,9 @@ router.put('/:id', permission('update:posts'), validate(postValidation), async (
 router.delete('/:id', permission('delete:posts'), async (req, res, next) => {
   try {
     const postId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(postId) || postId < 1) {
+      return res.error('Invalid post ID', 400);
+    }
 
     // Check if post exists
     const post = await Post.findPostById(postId);

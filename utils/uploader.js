@@ -4,6 +4,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
 import createError from 'http-errors';
+import crypto from 'crypto';
 
 // Basic configuration
 const config = {
@@ -14,14 +15,15 @@ const config = {
 
 // Local Storage
 const localStorage = (destination) => async (file, customPath) => {
-  const filename = `${Date.now()}-${file.originalname}`;
+  const safeOriginalName = path.basename(file.originalname).replace(/[^\w.-]/g, '_');
+  const filename = `${Date.now()}-${crypto.randomUUID()}-${safeOriginalName}`;
   const fullPath = path.join(destination, customPath);
   const filepath = path.join(fullPath, filename);
 
   await fs.mkdir(fullPath, { recursive: true });
   await fs.writeFile(filepath, file.buffer);
 
-  return filepath.replace('public', '');
+  return `/${path.relative('public', filepath).replace(/\\/g, '/')}`;
 };
 
 // AWS S3 Storage
@@ -131,10 +133,10 @@ const azureStorage = () => {
 // Storage selector
 const getStorage = (type, destination) => {
   const storages = {
-    's3': createError('AWS S3 storage is not currently configured.'), // s3Storage(),
-    'ncp': createError('NCP storage is not currently configured.'), // ncpStorage(),
-    'gcp': createError('GCP storage is not currently configured.'), // gcpStorage(),
-    'azure': createError('Azure Blob storage is not currently configured.'), // azureStorage(),
+    's3': async () => { throw createError(501, 'AWS S3 storage is not currently configured.'); }, // s3Storage(),
+    'ncp': async () => { throw createError(501, 'NCP storage is not currently configured.'); }, // ncpStorage(),
+    'gcp': async () => { throw createError(501, 'GCP storage is not currently configured.'); }, // gcpStorage(),
+    'azure': async () => { throw createError(501, 'Azure Blob storage is not currently configured.'); }, // azureStorage(),
     'local': localStorage(destination)
   };
 
@@ -174,7 +176,7 @@ const createUploader = ({
 
       next();
     } catch (error) {
-      next(createError(500, 'File upload failed'));
+      next(error.status ? error : createError(500, 'File upload failed'));
     }
   };
 

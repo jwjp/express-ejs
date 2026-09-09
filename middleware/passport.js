@@ -40,8 +40,7 @@ const configureLocalStrategy = ({
           req.connection.remoteAddress ||
           req.socket.remoteAddress;
 
-        const sessionId = req.sessionID || 'no-session';
-        const attemptsKey = `${ip}-${sessionId}`;
+        const attemptsKey = `${ip}-${String(email).toLowerCase()}`;
 
         // Clean up expired login attempts
         cleanupExpiredAttempts(windowMs);
@@ -131,7 +130,7 @@ const configurePassport = () => {
   return (app) => {
     app.use(passport.initialize());
     app.use(passport.session());
-    logger.info('🔐 Passport authentication configured successfully');
+    logger.info('Passport authentication configured successfully');
     return app;
   };
 
