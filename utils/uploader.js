@@ -9,8 +9,22 @@ import crypto from 'crypto';
 // Basic configuration
 const config = {
   maxSize: 5 * 1024 * 1024, // 5MB
+  maxFiles: 10,
   allowedTypes: ['image/jpeg', 'image/png', 'image/gif'],
   uploadPath: 'public/uploads'
+};
+
+const extensionsByType = new Map([
+  ['image/jpeg', ['.jpg', '.jpeg']],
+  ['image/png', ['.png']],
+  ['image/gif', ['.gif']]
+]);
+
+// The MIME type is client-supplied, so the stored extension must match it too.
+const isAllowedFile = (file, allowedTypes) => {
+  const extension = path.extname(file.originalname).toLowerCase();
+  return allowedTypes.includes(file.mimetype)
+    && (extensionsByType.get(file.mimetype) || []).includes(extension);
 };
 
 // Local Storage
@@ -147,15 +161,16 @@ const getStorage = (type, destination) => {
 const createUploader = ({
                           destination = config.uploadPath,
                           fileSize = config.maxSize,
+                          maxFiles = config.maxFiles,
                           allowedTypes = config.allowedTypes,
                           storage = 'local',
                           customPath = ''
                         } = {}) => {
   const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize },
+    limits: { fileSize, files: maxFiles },
     fileFilter: (req, file, cb) => {
-      allowedTypes.includes(file.mimetype)
+      isAllowedFile(file, allowedTypes)
         ? cb(null, true)
         : cb(createError(400, 'Unsupported file format.'), false);
     }

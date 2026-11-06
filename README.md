@@ -135,7 +135,7 @@ CORS_ORIGINS=*
 CORS_CREDENTIALS=false
 
 # Access Control
-PUBLIC_PATHS=/,/examples,/login,/auth/login,/auth/logout,/auth/register,/stylesheets/,/fonts/,/images/,/javascripts/
+PUBLIC_PATHS=/,/login,/auth/login,/auth/logout,/auth/register,/stylesheets/,/fonts/,/images/,/javascripts/
 ALLOWED_IPS=*
 
 # Database Configuration

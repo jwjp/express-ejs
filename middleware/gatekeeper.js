@@ -14,7 +14,6 @@ const gatekeeper = (req, res, next) => {
   // public path
   const publicPaths = parseList(process.env.PUBLIC_PATHS, [
     '/',
-    '/examples',
     '/login',
     '/auth/login',
     '/auth/logout',
