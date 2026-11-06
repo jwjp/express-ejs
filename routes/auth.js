@@ -7,6 +7,7 @@ import validate from '#utils/validator';
 import User from '#models/user';
 import { logger } from '#utils/logger';
 import throttler from '#utils/throttler';
+import safeLocalPath from '#utils/safeRedirect';
 
 const router = express.Router();
 
@@ -109,7 +110,7 @@ router.post('/login', validate(loginValidation), (req, res, next) => {
       }
 
       // Handle web requests - redirect to the home page or the originally requested URL
-      const redirectTo = req.session.returnTo || '/';
+      const redirectTo = safeLocalPath(req.session.returnTo);
       delete req.session.returnTo;
 
       return res.redirect(redirectTo);

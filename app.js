@@ -37,15 +37,22 @@ app.use(compression());
 
 // 2. Security
 app.use(helmet());
+const corsCredentials = toBoolean(process.env.CORS_CREDENTIALS, false);
+if (corsCredentials && parseList(process.env.CORS_ORIGINS, ['*']).includes('*')) {
+  logger.warn('CORS_ORIGINS=* is ignored while CORS_CREDENTIALS is on. List the allowed origins explicitly.');
+}
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = parseList(process.env.CORS_ORIGINS, ['*']);
-    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+    // The cors package reflects the request origin, so a wildcard with
+    // credentials would let every site make authenticated requests.
+    const allowAnyOrigin = !corsCredentials && allowedOrigins.includes('*');
+    if (!origin || allowAnyOrigin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     return callback(createError(403, 'Origin is not allowed by CORS'));
   },
-  credentials: toBoolean(process.env.CORS_CREDENTIALS, false)
+  credentials: corsCredentials
 }));
 
 // 3. Parsing
