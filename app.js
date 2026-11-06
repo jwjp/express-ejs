@@ -105,7 +105,9 @@ app.use((err, req, res, next) => {
   logger.error(err?.stack);
 
   const status = err.status || 500;
-  const message = err.message || 'Internal Server Error';
+  const message = status >= 500 && isProduction
+    ? 'Internal Server Error'
+    : err.message || 'Internal Server Error';
 
   if (req.accepts('json')) {
     return res.status(status).json({

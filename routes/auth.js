@@ -127,7 +127,7 @@ router.post('/register', validate([...registerValidation, ...confirmPasswordVali
     // Check if email already exists
     const existingUser = await User.findUserByEmail(email);
     if (existingUser) {
-      return res.error('Email already in use', 400, req.body);
+      return res.error('Email already in use', 400);
     }
 
     // Create the user

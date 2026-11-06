@@ -145,6 +145,8 @@ DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=your_password
 DB_DATABASE=your_database
+# Logs write statements without their values when true.
+QUERY_LOG_ENABLED=false
 ```
 
 ## File Upload Usage

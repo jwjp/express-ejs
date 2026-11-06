@@ -8,9 +8,10 @@ dotenv.config();
 let pool = null;
 
 // logging - !SELECT
-const logQuery = (query, params) => {
-  if (!query.trim().toUpperCase().startsWith('SELECT')) {
-    createLogger('query').info(mysql.format(query, params));
+const logQuery = (query) => {
+  // Values are never logged because they can contain credentials and personal data.
+  if (process.env.QUERY_LOG_ENABLED === 'true' && !query.trim().toUpperCase().startsWith('SELECT')) {
+    createLogger('query').info(query);
   }
 };
 
@@ -22,8 +23,7 @@ const wrapConnection = (conn) => {
 
   const originalExecute = conn.execute.bind(conn);
   conn.execute = async (...args) => {
-    const [query, params] = args;
-    logQuery(query, params);
+    logQuery(args[0]);
     return originalExecute(...args);
   };
 
